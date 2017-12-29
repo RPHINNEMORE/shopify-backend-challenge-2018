@@ -2,23 +2,25 @@
 
 import requests, json
 import networkx as nx
+from collections import OrderedDict
+
 
 ENDPOINT_PREFIX = 'https://backend-challenge-summer-2018.herokuapp.com/challenges.json?id=1&page='
 
 
-def findTotalPages(url):
+def find_total_pages(url):
     r = requests.get(url)
     data = r.json()
     pagination = data['pagination']
     total = pagination['total']
-    perpage = pagination['per_page']
-    totalpages = total / perpage
-    return totalpages + 1
+    per_page = pagination['per_page']
+    total_pages = total / per_page
+    return total_pages + 1
 
 
-def getAllDataFromPages(totalpages):
+def get_all_data_from_pages(total_pages):
     items = []
-    for i in range(1, totalpages):
+    for i in range(1, total_pages):
         key = str(i)
         url = ENDPOINT_PREFIX + key
         r = requests.get(url)
@@ -28,7 +30,7 @@ def getAllDataFromPages(totalpages):
     return items
 
 
-def createGraph(items):
+def create_graph(items):
     G = nx.DiGraph()
     for element in items:
         node = element['id']
@@ -39,7 +41,7 @@ def createGraph(items):
     return G
 
 
-def createIdList(items):
+def create_id_list(items):
     id_list = []
     for item in items:
         iid = item['id']
@@ -56,7 +58,7 @@ def is_invalid(menu, invalid_menus):
     return False
 
 
-def createAllMenusList(id_list, G):
+def create_all_menus_list(id_list, G):
     all_menus = []
     visited = []
     for iid in id_list:
@@ -68,12 +70,12 @@ def createAllMenusList(id_list, G):
     return all_menus
 
 
-def createInvalidMenusList(G):
+def create_invalid_menus_list(G):
     invalid_menus = list(nx.simple_cycles(G))
     return invalid_menus
 
 
-def createValidMenusList(invalid_menus, all_menus):
+def create_valid_menus_list(invalid_menus, all_menus):
     valid_menus = []
     for menu in all_menus:
         if is_invalid(menu, invalid_menus):
@@ -82,15 +84,15 @@ def createValidMenusList(invalid_menus, all_menus):
     return valid_menus
 
 
-def createMenusOutput(dict_valid_menus, dict_invalid_menus):
+def create_menus_output(dict_valid_menus, dict_invalid_menus):
     d = {"valid_menus": [{"root_id": key, "children": value} for key, value in dict_valid_menus.items()],
-         "invalid_menus": [{"root_id": key, "children": value} for key, value in dict_invalid_menus.items()]
+        "invalid_menus": [{"root_id": key, "children": value} for key, value in dict_invalid_menus.items()]
          }
     json_string = json.dumps(d)
     print json_string
 
 
-def createDictionaryMenus(menu, count, dict_menu):
+def create_dictionary_menus(menu, count, dict_menu):
     value = []
     key = menu[0]
     for i in range(count, len(menu)):
@@ -98,44 +100,47 @@ def createDictionaryMenus(menu, count, dict_menu):
     dict_menu[key] = value
 
 
-def createDictValidMenus(valid_menus):
-    dict_valid_menus = {}
+def create_dict_valid_menus(valid_menus):
+    #dict_valid_menus = {}
+    dict_valid_menus = OrderedDict()
     for element in valid_menus:
         element.sort()
         count = 1
-        createDictionaryMenus(element, count, dict_valid_menus)
+        create_dictionary_menus(element, count, dict_valid_menus)
     return dict_valid_menus
 
 
-def createDictInvalidMenus(invalid_menus, G):
-    dict_invalid_menus = {}
+def create_dict_invalid_menus(invalid_menus, G):
+    #dict_invalid_menus = {}
+    dict_invalid_menus = OrderedDict()
     for element in invalid_menus:
         element.sort()
         first_node = element[0]
         last_position = len(element) - 1
         last = element[last_position]
         last_edge = G.edges(last)
-        for element in last_edge:
-            if first_node in element:
+        for item in last_edge:
+            if first_node in item:
                 count = 0
             else:
                 count = 1
-        createDictionaryMenus(element, count, dict_invalid_menus)
+        create_dictionary_menus(element, count, dict_invalid_menus)
     return dict_invalid_menus
 
 
 def run():
     url = ENDPOINT_PREFIX + '1'
-    totalpages = findTotalPages(url)
-    items = getAllDataFromPages(totalpages)
-    G = createGraph(items)
-    id_list = createIdList(items)
-    all_menus = createAllMenusList(id_list, G)
-    invalid_menus = createInvalidMenusList(G)
-    valid_menus = createValidMenusList(invalid_menus, all_menus)
-    dict_valid_menus = createDictValidMenus(valid_menus)
-    dict_invalid_menus = createDictInvalidMenus(invalid_menus, G)
-    createMenusOutput(dict_valid_menus, dict_invalid_menus)
+    total_pages = find_total_pages(url)
+    items = get_all_data_from_pages(total_pages)
+    G = create_graph(items)
+    id_list = create_id_list(items)
+    all_menus = create_all_menus_list(id_list, G)
+    invalid_menus = create_invalid_menus_list(G)
+    valid_menus = create_valid_menus_list(invalid_menus, all_menus)
+    dict_valid_menus = create_dict_valid_menus(valid_menus)
+    dict_invalid_menus = create_dict_invalid_menus(invalid_menus, G)
+    create_menus_output(dict_valid_menus, dict_invalid_menus)
+
 
 if __name__ == "__main__":
     run()
