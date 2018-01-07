@@ -1,4 +1,5 @@
-# good copy
+# Shopify Backend Challenge Summer 2018
+
 
 import requests, json
 import networkx as nx
@@ -88,8 +89,7 @@ def create_menus_output(dict_valid_menus, dict_invalid_menus):
     d = {"valid_menus": [{"root_id": key, "children": value} for key, value in dict_valid_menus.items()],
         "invalid_menus": [{"root_id": key, "children": value} for key, value in dict_invalid_menus.items()]
          }
-    json_string = json.dumps(d)
-    print json_string
+    return d
 
 
 def create_dictionary_menus(menu, count, dict_menu):
@@ -101,8 +101,7 @@ def create_dictionary_menus(menu, count, dict_menu):
 
 
 def create_dict_valid_menus(valid_menus):
-    #dict_valid_menus = {}
-    dict_valid_menus = OrderedDict()
+    dict_valid_menus = {}
     for element in valid_menus:
         element.sort()
         count = 1
@@ -111,8 +110,7 @@ def create_dict_valid_menus(valid_menus):
 
 
 def create_dict_invalid_menus(invalid_menus, G):
-    #dict_invalid_menus = {}
-    dict_invalid_menus = OrderedDict()
+    dict_invalid_menus = {}
     for element in invalid_menus:
         element.sort()
         first_node = element[0]
@@ -128,6 +126,17 @@ def create_dict_invalid_menus(invalid_menus, G):
     return dict_invalid_menus
 
 
+def print_output_ordered_format(dic):
+    output_menus = {}
+    for key,value in dic.items():
+        if value:
+            output_menus[key] = []
+            for v in value:
+                vod = OrderedDict(sorted(v.items(), key=lambda x: x[1], reverse=False))
+                output_menus[key].append(vod)
+    print json.dumps(output_menus, sort_keys=False, indent=1)
+
+
 def run():
     url = ENDPOINT_PREFIX + '1'
     total_pages = find_total_pages(url)
@@ -139,7 +148,8 @@ def run():
     valid_menus = create_valid_menus_list(invalid_menus, all_menus)
     dict_valid_menus = create_dict_valid_menus(valid_menus)
     dict_invalid_menus = create_dict_invalid_menus(invalid_menus, G)
-    create_menus_output(dict_valid_menus, dict_invalid_menus)
+    dict_menus = create_menus_output(dict_valid_menus, dict_invalid_menus)
+    print_output_ordered_format(dict_menus)
 
 
 if __name__ == "__main__":
